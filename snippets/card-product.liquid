@@ -21,8 +21,11 @@
   {% render 'card-product', show_vendor: section.settings.show_vendor %}
 {% endcomment %}
 {% assign first_variant = product.variants.first %}
-
-{% assign has_discount = first_variant.compare_at_price > first_variant.price %}
+{% assign option_values = product.options_with_values[0].values %}
+{% assign has_discount = false %}
+{% if first_variant.compare_at_price and first_variant.compare_at_price > first_variant.price %}
+  {% assign has_discount = true %}
+{% endif %}
 
 <div class="w-[315px] h-[452px] flex flex-col relative gap-[15px]">
   {% if has_discount %}
