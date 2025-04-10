@@ -3,28 +3,12 @@
 
   Accepts:
   - card_product: {Object} Product Liquid object (optional)
-  - media_aspect_ratio: {String} Size of the product image card. Values are "square" and "portrait". Default is "square" (optional)
-  - image_shape: {String} Image mask to apply to the product image card. Values are "arch", "blob", "chevronleft", "chevronright", "diamond", "parallelogram", and "round". (optional)
-  - show_secondary_image: {Boolean} Show the secondary image on hover. Default: false (optional)
-  - show_vendor: {Boolean} Show the product vendor. Default: false
-  - show_rating: {Boolean} Show the product rating. Default: false
-  - extend_height: {Boolean} Card height extends to available container space. Default: true (optional)
-  - lazy_load: {Boolean} Image should be lazy loaded. Default: true (optional)
-  - skip_styles: {Boolean} Don't include component styles. Useful when rendering multiple product cards in a loop. Default: false (optional)
-  - quick_add: {Boolean} Show the quick add button.
-  - section_id: {String} The ID of the section that contains this card.
-  - horizontal_class: {Boolean} Add a card--horizontal class if set to true. Default: false (optional)
-  - horizontal_quick_add: {Boolean} Changes the quick add button styles when set to true. Default: false (optional)
-  - placeholder_image: {String} The placeholder image to use when no product exists. Default: 'product-apparel-2' (optional)
 
   Usage:
-  {% render 'card-product', show_vendor: section.settings.show_vendor %}
+  {% render 'card-product' %}
 {% endcomment %}
-{%- unless skip_styles -%}
-  {{ 'component-rating.css' | asset_url | stylesheet_tag }}
-  {{ 'component-volume-pricing.css' | asset_url | stylesheet_tag }}
-  {{ 'component-price.css' | asset_url | stylesheet_tag }}
-{%- endunless -%}
+
+{{ 'output.css' | asset_url | stylesheet_tag }}
 
 {% assign color_option_index = 0 %}
 {% for option in card_product.options_with_values %}
@@ -33,111 +17,112 @@
   {% endif %}
 {% endfor %}
 
-<div class="product-card">
-  <div class="badge">on sale</div>
-  <a href="/" style="max-width: 100px">
-    {% assign initial_variant = card_product.selected_or_first_available_variant %}
-    {% assign initial_main_image = initial_variant.metafields.custom.main_image | image_url: width: 100 %}
-    {% assign initial_hover_image = initial_variant.metafields.custom.hover_image | image_url: width: 100 %}
+<div id="{{ card_product.handle }}-product-card" class="w-[315px] h-[452px] flex flex-col relative gap-[15px]">
+  <div
+    id="{{ card_product.handle }}-badge"
+    class="absolute top-[20px] left-[20px] border-red-500 bg-white border rounded-[25.61px] px-[12.8px] py-[6.4px]"
+  >
+    <span class="text-red-500 franklinGothicFont text-[15px] font-medium">On sale!</span>
+  </div>
+
+  <a
+    id="{{ card_product.handle }}-product-link"
+    href="/products/{{ card_product.handle }}"
+    class="flex items-center justify-center h-[340px] w-[315px] px-[20px] py-[20px] border rounded-[10px] bg-center bg-contain border-[#f8f8f8]"
+    aria-label="Navigate to the {{ card_product.title }}"
+  >
+    {% assign initial_variant = card_product.variants[0] %}
+    {% assign initial_main_image = initial_variant.metafields.custom.main_image | image_url %}
+    {% assign initial_hover_image = initial_variant.metafields.custom.hover_image | image_url %}
 
     <img
-      id="product-image"
+      id="{{ card_product.handle }}-product-image"
       src="{{ initial_main_image | image_url }}"
       data-main="{{ initial_main_image }}"
       data-hover="{{ initial_hover_image }}"
       alt="{{ initial_variant.title | escape }}"
-      class="motion-reduce"
+      class="h-[301px] w-auto object-contain"
       loading="lazy"
-      width="100"
-      height="100"
+      width="auto"
+      height="301"
     >
   </a>
 
-  <div class="swatches">
+  <div class="flex gap-[5px]">
     {% assign colors = '' %}
     {% for variant in card_product.variants %}
       {% assign color = variant.options[color_option_index] %}
       {% unless colors contains color %}
         {% assign colors = colors | append: color | append: ',' %}
 
-        {% if variant.id == card_product.selected_or_first_available_variant.id %}
-          {% assign is_selected = true %}
-        {% else %}
-          {% assign is_selected = false %}
-        {% endif %}
-
         <button
-          id="variant-{{ variant.id }}"
-          class="w-6 h-6 rounded-full border {% if is_selected %}border-blue-600{% else %}border-gray-300{% endif %} mr-2"
-          style="background-color: {{ variant.metafields.custom.color_hex | default: '#fff' }};"
-          onclick="selectVariant('{{ card_product.id }}', '{{ variant.id }}', '{{ variant.price }}', '{{ variant.compare_at_price }}', '{{ variant.metafields.custom.main_image | image_url }}', '{{ variant.metafields.custom.hover_image | image_url }}')"
-          title="{{ color }}"
-        ></button>
+          id="{{ variant.id }}-variant"
+          class="option w-[24px] h-[24px] flex items-center justify-center rounded-full cursor-pointer"
+          onclick="selectVariant('{{ card_product.handle }}', '{{ variant.id }}', '{{ variant.metafields.custom.main_image | image_url }}', '{{ variant.metafields.custom.hover_image | image_url }}')"
+          title="{{ variant.title }}"
+          data-is-selected="{% if variant.id == card_product.variants[0].id %}true{% else %}false{% endif %}"
+          data-variant-id="{{ variant.id }}"
+          aria-label="Select {{ variant.title }}"
+        >
+          <div
+            class="w-[20px] h-[20px] rounded-full"
+            style="background-color: {{ variant.metafields.custom.color_hex | default: '#fff' }};"
+          ></div>
+        </button>
       {% endunless %}
     {% endfor %}
   </div>
-  <div class="info">
-    <span>{{ card_product.metafields.custom.brand }}</span>
-    <span>{{ card_product.title }}</span>
-  </div>
-  <div class="price">
-    <span id="{{card_product.id}}-compare-price">
-      {{- card_product.selected_or_first_available_variant.compare_at_price -}}
-    </span>
-    <span id="{{card_product.id}}-price">{{ card_product.selected_or_first_available_variant.price }}</span>
+  <div class="flex flex-col gap-[6px]">
+    <span class="block text-gray-900 leading-[14px]">{{ card_product.metafields.custom.brand }}</span>
+    <a
+      href="/products/{{ card_product.handle }}"
+      class="block font-medium text-[16px] leading-[18px] text-[rgba(10,72,116,1)]"
+      aria-label="Navigate to the {{ card_product.title }}"
+    >
+      {{- card_product.title -}}
+    </a>
+    <div class="flex gap-[8px]">
+      <span id="{{card_product.handle}}-compare-price" class="line-through leading-[16px] text-gray-900">
+        {{- card_product.variants[0].compare_at_price | money }}
+      </span>
+      <span id="{{card_product.handle}}-price" class="text-red-600 leading-[16px]">
+        {{- card_product.variants[0].price | money -}}
+      </span>
+    </div>
   </div>
 </div>
 
+<script src="{{ 'card-product.js' | asset_url }}" defer="defer"></script>
+
 <script>
-  function selectVariant(productId, variantId, variantPrice, variantCompareAtPrice, mainImageUrl, hoverImageUrl) {
-    if (!mainImageUrl) {
-      console.error('Main image URL is not provided');
-      return;
-    }
-
-    const productImage = document.getElementById('product-image');
-    if (productImage) {
-      productImage.src = mainImageUrl;
-    }
-
-    productImage.addEventListener('mouseover', function () {
-      productImage.src = hoverImageUrl;
-    });
-
-    productImage.addEventListener('mouseout', function () {
-      productImage.src = mainImageUrl;
-    });
-
-    const buttons = document.querySelectorAll('.swatches button');
-    buttons.forEach((button) => {
-      button.classList.remove('border-blue-600');
-      button.classList.add('border-gray-300');
-    });
-
-    const selectedButton = document.getElementById(`variant-${variantId}`);
-    if (selectedButton) {
-      selectedButton.classList.add('border-blue-600');
-    }
-
-    const price = document.getElementById(`${productId}-price`);
-    price.innerText = `now: ${variantPrice}`;
-
-    if (variantCompareAtPrice !== '0') {
-      const compareAtPrice = document.getElementById(`${productId}-compare-price`);
-      compareAtPrice.innerText = `before: ${variantCompareAtPrice}`;
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', function () {
-    const productImage = document.getElementById('product-image');
+    const productHandle = '{{ card_product.handle }}';
+    const selectedVariantId = {{ card_product.selected_or_first_available_variant.id }};
+    const productCard = document.getElementById(`${productHandle}-product-card`);
+  
+    if (!productCard) return;
+    
+    const swatchButtons = productCard.querySelectorAll(`button.option`);
+    const productLink = productCard.querySelector(`#${productHandle}-product-link`);
+    const productImage = productCard.querySelector(`#${productHandle}-product-image`);
 
-    if (productImage) {
-      productImage.addEventListener('mouseover', () => {
+    swatchButtons.forEach((button) => {
+      const variantId = button.getAttribute('data-variant-id');
+      
+      if (variantId == selectedVariantId) {
+        button.classList.add('active-swatch');
+      } else {
+        button.classList.remove('active-swatch');
+      }
+    });
+
+    if (productLink && productImage) {
+      productLink.addEventListener('mouseover', () => {
         const hoverSrc = productImage.getAttribute('data-hover');
         if (hoverSrc) productImage.src = hoverSrc;
       });
-
-      productImage.addEventListener('mouseout', () => {
+  
+      productLink.addEventListener('mouseout', () => {
         const mainSrc = productImage.getAttribute('data-main');
         if (mainSrc) productImage.src = mainSrc;
       });

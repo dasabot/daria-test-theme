@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@import './fonts.css';
+
+@layer components {
+  .active-swatch {
+    border: 1px solid rgba(10, 72, 116, 1);
+  }
+
+  .franklinGothicFont {
+    font-family: 'Franklin Gothic ATF', sans-serif;
+  }
+}
