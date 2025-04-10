@@ -2,7 +2,7 @@ async function getProductData(productUrl) {
   const cacheTtl = 1000 * 60; // 1 min
   const cachedData = sessionStorage.getItem(productUrl);
   let productData = cachedData && JSON.parse(cachedData);
-  
+
   const now = new Date().getTime();
 
   if (!productData || now - productData._cacheTime > cacheTtl) {
@@ -55,10 +55,14 @@ function updateProductCard(productData, variantId, price, compareAtPrice, badge)
     if (selectedVariant.compare_at_price && Number(selectedVariant.compare_at_price) > Number(selectedVariant.price)) {
       badge.classList.remove('hidden');
       compareAtPrice.classList.remove('hidden');
+      price.classList.add('text-red-600');
+      price.classList.remove('text-gray-900');
       compareAtPrice.innerHTML = currency + (Number(selectedVariant.compare_at_price) / 100).toFixed(2);
     } else {
       badge.classList.add('hidden');
       compareAtPrice.classList.add('hidden');
+      price.classList.remove('text-red-600');
+      price.classList.add('text-gray-900');
     }
   }
 }
